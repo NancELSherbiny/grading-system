@@ -1,0 +1,48 @@
+.counts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.count {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border-left-width: 4px;
+
+  .label {
+    font-weight: 500;
+  }
+
+  .value {
+    font-size: 32px;
+    font-weight: 700;
+  }
+}
+
+.succeeded {
+  border-left-color: #2e7d32;
+}
+
+.failed {
+  border-left-color: #c62828;
+}
+
+.search {
+  flex: 2 1 280px !important;
+}
+
+.hidden {
+  visibility: hidden;
+}
+
+.actions {
+  text-align: right;
+}
+
+td,
+th {
+  white-space: nowrap;
+}

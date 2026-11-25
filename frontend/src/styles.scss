@@ -88,3 +88,8 @@ table {
     width: 100%;
   }
 }
+
+// Keep suffixes like "/ 30" on one line.
+.mat-mdc-form-field-text-suffix {
+  white-space: nowrap;
+}
