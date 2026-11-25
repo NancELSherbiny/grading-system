@@ -1,0 +1,17 @@
+# SQL Server for macOS / Linux, where LocalDB isn't available.
+#   docker compose up -d db
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    # SQL Server is published for x86-64 only; Docker Desktop emulates it on Apple Silicon.
+    platform: linux/amd64
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "GradingSystem#Dev2026"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+
+volumes:
+  sqlserver-data:
