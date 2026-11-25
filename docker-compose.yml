@@ -1,5 +1,5 @@
-# SQL Server for macOS / Linux, where LocalDB isn't available.
-#   docker compose up -d --wait db     (returns once SQL Server accepts connections)
+# Everything:   docker compose up --build    -> app http://localhost:4200, Swagger http://localhost:5080/swagger
+# Database only (for running the API and Angular yourself):   docker compose up -d --wait db
 services:
   db:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -19,6 +19,26 @@ services:
       timeout: 5s
       retries: 20
       start_period: 20s
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: API/Dockerfile
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=db,1433;Database=GradingSystemDb;User Id=sa;Password=GradingSystem#Dev2026;TrustServerCertificate=True"
+      SeedDemoData: "true"
+    ports:
+      - "5080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build: ./frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - api
 
 volumes:
   sqlserver-data:
