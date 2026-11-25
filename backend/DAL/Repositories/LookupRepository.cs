@@ -20,4 +20,10 @@ public class LookupRepository : ILookupRepository
 
     public async Task<bool> AcademicYearExistsAsync(int id)
         => await _context.AcademicYears.AnyAsync(y => y.Id == id);
+
+    public async Task<Subject?> GetSubjectAsync(int id)
+        => await _context.Subjects.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
+
+    public async Task<int> CountSubjectsAsync()
+        => await _context.Subjects.CountAsync();
 }

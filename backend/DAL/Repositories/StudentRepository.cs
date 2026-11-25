@@ -12,53 +12,48 @@ public class StudentRepository : IStudentRepository
         _context = context;
     }
 
-    public async Task<(List<Student> Items, int TotalCount)> GetPagedAsync(
-        string? search, int? academicYearId, string sortBy, bool descending, int pageNumber, int pageSize)
+    public async Task<(List<Student> Items, int TotalCount)> GetPagedAsync(StudentFilter filter)
     {
         // AsNoTracking: we only read these rows, so EF doesn't need to watch them for changes.
-        IQueryable<Student> query = _context.Students
+        var query = _context.Students
             .Include(s => s.AcademicYear)
-            .AsNoTracking();
+            .Include(s => s.Marks)
+            .AsNoTracking()
+            .Search(filter.Search, filter.AcademicYearId);
 
-        // 1. Search and filter
-        if (!string.IsNullOrWhiteSpace(search))
+        // Grade filter: graded in every subject, with a total inside the grade's range.
+        if (filter.MinTotal.HasValue)
         {
             query = query.Where(s =>
-                s.Name.Contains(search) ||
-                s.NationalId.Contains(search) ||
-                s.AcademicYear!.Name.Contains(search));
+                s.Marks.Count == filter.SubjectCount &&
+                s.Marks.Sum(m => m.Term1 + m.Term2) >= filter.MinTotal);
         }
 
-        if (academicYearId.HasValue)
+        if (filter.MaxTotal.HasValue)
         {
-            query = query.Where(s => s.AcademicYearId == academicYearId.Value);
+            query = query.Where(s => s.Marks.Sum(m => m.Term1 + m.Term2) < filter.MaxTotal);
         }
 
-        // 2. Count everything that matches, before taking one page
         var totalCount = await query.CountAsync();
 
-        // 3. Sort. Academic year ids are seeded in school order, so sorting by id sorts by stage.
-        var sorted = sortBy switch
+        // Academic year ids are seeded in school order, so sorting by the id sorts by stage.
+        var sorted = filter.SortBy switch
         {
-            "name" => descending ? query.OrderByDescending(s => s.Name) : query.OrderBy(s => s.Name),
-            "nationalId" => descending ? query.OrderByDescending(s => s.NationalId) : query.OrderBy(s => s.NationalId),
-            "academicYear" => descending ? query.OrderByDescending(s => s.AcademicYearId) : query.OrderBy(s => s.AcademicYearId),
-            _ => descending ? query.OrderByDescending(s => s.Id) : query.OrderBy(s => s.Id),
+            "name" => query.OrderBy(s => s.Name, filter.Descending),
+            "nationalId" => query.OrderBy(s => s.NationalId, filter.Descending),
+            "academicYear" => query.OrderBy(s => s.AcademicYearId, filter.Descending),
+            "total" => query.OrderBy(s => s.Marks.Sum(m => m.Term1 + m.Term2), filter.Descending),
+            _ => query.OrderBy(s => s.Id, filter.Descending),
         };
 
-        // 4. Page. ThenBy(Id) keeps the order stable when two rows have the same name or year.
-        var items = await sorted
-            .ThenBy(s => s.Id)
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
-
+        var items = await sorted.Page(filter.PageNumber, filter.PageSize).ToListAsync();
         return (items, totalCount);
     }
 
     public async Task<Student?> GetByIdAsync(int id)
         => await _context.Students
             .Include(s => s.AcademicYear)
+            .Include(s => s.Marks)
             .FirstOrDefaultAsync(s => s.Id == id);
 
     public async Task<bool> NationalIdExistsAsync(string nationalId, int? exceptStudentId = null)

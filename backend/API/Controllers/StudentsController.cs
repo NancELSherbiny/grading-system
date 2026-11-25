@@ -17,7 +17,7 @@ public class StudentsController : ControllerBase
         _service = service;
     }
 
-    // GET api/students?search=ali&academicYearId=1&pageNumber=1&pageSize=10&sortBy=name&sortDirection=asc
+    // GET api/students?search=ali&academicYearId=1&grade=B&pageNumber=1&pageSize=10&sortBy=name&sortDirection=asc
     [HttpGet]
     public async Task<ActionResult<PagedResult<StudentDto>>> GetAll([FromQuery] StudentQueryDto query)
         => Ok(await _service.GetPagedAsync(query));
@@ -26,6 +26,11 @@ public class StudentsController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<StudentDto>> GetById(int id)
         => Ok(await _service.GetByIdAsync(id));
+
+    // GET api/students/5/grades  -> marks and grade in every subject, plus the overall result
+    [HttpGet("{id:int}/grades")]
+    public async Task<ActionResult<StudentGradesDto>> GetGrades(int id)
+        => Ok(await _service.GetGradesAsync(id));
 
     // POST api/students  -> 201 Created, with a Location header pointing at the new student
     [HttpPost]

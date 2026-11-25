@@ -34,10 +34,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Repositories
 builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 builder.Services.AddScoped<ILookupRepository, LookupRepository>();
+builder.Services.AddScoped<IMarkRepository, MarkRepository>();
 
 // Services
 builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<ILookupService, LookupService>();
+builder.Services.AddScoped<IGradingService, GradingService>();
 
 var app = builder.Build();
 

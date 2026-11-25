@@ -4,10 +4,10 @@ namespace DAL.Repositories;
 
 public interface IStudentRepository
 {
-    /// <summary>One page of students matching the search and filter, plus how many match in total.</summary>
-    Task<(List<Student> Items, int TotalCount)> GetPagedAsync(
-        string? search, int? academicYearId, string sortBy, bool descending, int pageNumber, int pageSize);
+    /// <summary>One page of students (with their marks) matching the filter, plus how many match in total.</summary>
+    Task<(List<Student> Items, int TotalCount)> GetPagedAsync(StudentFilter filter);
 
+    /// <summary>A student with their academic year and all their marks.</summary>
     Task<Student?> GetByIdAsync(int id);
 
     /// <summary>Whether another student already uses this National ID. Pass the student's own id when editing.</summary>

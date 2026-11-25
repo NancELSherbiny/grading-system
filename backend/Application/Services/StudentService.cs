@@ -19,17 +19,31 @@ public class StudentService : IStudentService
 
     public async Task<PagedResult<StudentDto>> GetPagedAsync(StudentQueryDto query)
     {
-        var (items, totalCount) = await _students.GetPagedAsync(
-            query.Search?.Trim(),
-            query.AcademicYearId,
-            query.SortBy,
-            descending: query.SortDirection == "desc",
-            query.PageNumber,
-            query.PageSize);
+        var subjectCount = await _lookups.CountSubjectsAsync();
+
+        var filter = new StudentFilter
+        {
+            Search = query.Search?.Trim(),
+            AcademicYearId = query.AcademicYearId,
+            SubjectCount = subjectCount,
+            SortBy = query.SortBy,
+            Descending = query.SortDirection == "desc",
+            PageNumber = query.PageNumber,
+            PageSize = query.PageSize,
+        };
+
+        // The grade filter becomes a range of totals, so the database only has to compare numbers.
+        if (query.Grade is not null)
+        {
+            (filter.MinTotal, filter.MaxTotal) =
+                GradeCalculator.GetTotalRange(query.Grade, subjectCount * GradeCalculator.MaxSubjectTotal);
+        }
+
+        var (items, totalCount) = await _students.GetPagedAsync(filter);
 
         return new PagedResult<StudentDto>
         {
-            Items = items.Select(ToDto).ToList(),
+            Items = items.Select(s => ToDto(s, subjectCount)).ToList(),
             PageNumber = query.PageNumber,
             PageSize = query.PageSize,
             TotalCount = totalCount,
@@ -38,10 +52,46 @@ public class StudentService : IStudentService
 
     public async Task<StudentDto> GetByIdAsync(int id)
     {
-        var student = await _students.GetByIdAsync(id)
-            ?? throw new NotFoundException($"Student {id} was not found.");
+        var student = await FindAsync(id);
+        return ToDto(student, await _lookups.CountSubjectsAsync());
+    }
 
-        return ToDto(student);
+    public async Task<StudentGradesDto> GetGradesAsync(int id)
+    {
+        var student = await FindAsync(id);
+        var subjects = await _lookups.GetSubjectsAsync();
+
+        // One row per subject, even those without marks yet.
+        var rows = subjects.Select(subject =>
+        {
+            var mark = student.Marks.FirstOrDefault(m => m.SubjectId == subject.Id);
+            var total = mark is null ? (int?)null : mark.Term1 + mark.Term2;
+
+            return new SubjectGradeDto
+            {
+                SubjectId = subject.Id,
+                Subject = subject.Name,
+                Term1 = mark?.Term1,
+                Term2 = mark?.Term2,
+                Total = total,
+                Grade = total is null ? null : GradeCalculator.GetGrade(total.Value, GradeCalculator.MaxSubjectTotal),
+            };
+        }).ToList();
+
+        var overall = ToDto(student, subjects.Count);
+
+        return new StudentGradesDto
+        {
+            StudentId = student.Id,
+            Name = student.Name,
+            NationalId = student.NationalId,
+            AcademicYear = overall.AcademicYear,
+            Subjects = rows,
+            Total = overall.Total,
+            MaxTotal = overall.MaxTotal,
+            Percentage = overall.Percentage,
+            Grade = overall.Grade,
+        };
     }
 
     public async Task<StudentDto> CreateAsync(SaveStudentDto dto)
@@ -66,8 +116,7 @@ public class StudentService : IStudentService
 
     public async Task<StudentDto> UpdateAsync(int id, SaveStudentDto dto)
     {
-        var student = await _students.GetByIdAsync(id)
-            ?? throw new NotFoundException($"Student {id} was not found.");
+        var student = await FindAsync(id);
 
         var nationalId = dto.NationalId.Trim();
         await EnsureAcademicYearExistsAsync(dto.AcademicYearId);
@@ -83,13 +132,16 @@ public class StudentService : IStudentService
 
     public async Task DeleteAsync(int id)
     {
-        var student = await _students.GetByIdAsync(id)
-            ?? throw new NotFoundException($"Student {id} was not found.");
+        var student = await FindAsync(id);
 
         // The database deletes the student's marks with them (cascade delete).
         _students.Remove(student);
         await _students.SaveChangesAsync();
     }
+
+    private async Task<Student> FindAsync(int id)
+        => await _students.GetByIdAsync(id)
+            ?? throw new NotFoundException($"Student {id} was not found.");
 
     private async Task EnsureAcademicYearExistsAsync(int academicYearId)
     {
@@ -107,12 +159,24 @@ public class StudentService : IStudentService
         }
     }
 
-    private static StudentDto ToDto(Student student) => new()
+    /// <summary>The overall grade appears only once the student has marks in every subject.</summary>
+    private static StudentDto ToDto(Student student, int subjectCount)
     {
-        Id = student.Id,
-        Name = student.Name,
-        NationalId = student.NationalId,
-        AcademicYearId = student.AcademicYearId,
-        AcademicYear = student.AcademicYear?.Name ?? string.Empty,
-    };
+        var maxTotal = subjectCount * GradeCalculator.MaxSubjectTotal;
+        var fullyGraded = subjectCount > 0 && student.Marks.Count == subjectCount;
+        var total = student.Marks.Sum(m => m.Term1 + m.Term2);
+
+        return new StudentDto
+        {
+            Id = student.Id,
+            Name = student.Name,
+            NationalId = student.NationalId,
+            AcademicYearId = student.AcademicYearId,
+            AcademicYear = student.AcademicYear?.Name ?? string.Empty,
+            MaxTotal = maxTotal,
+            Total = fullyGraded ? total : null,
+            Percentage = fullyGraded ? GradeCalculator.GetPercentage(total, maxTotal) : null,
+            Grade = fullyGraded ? GradeCalculator.GetGrade(total, maxTotal) : null,
+        };
+    }
 }

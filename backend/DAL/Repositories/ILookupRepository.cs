@@ -9,4 +9,8 @@ public interface ILookupRepository
     Task<List<Subject>> GetSubjectsAsync();
 
     Task<bool> AcademicYearExistsAsync(int id);
+
+    Task<Subject?> GetSubjectAsync(int id);
+
+    Task<int> CountSubjectsAsync();
 }
