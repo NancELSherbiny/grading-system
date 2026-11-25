@@ -49,6 +49,12 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
+
+    // Sample students, only when the database is empty (on in Development and Docker).
+    if (app.Configuration.GetValue<bool>("SeedDemoData"))
+    {
+        DemoData.Seed(db);
+    }
 }
 
 // Turns exceptions from the services into JSON errors (400, 404, 409, 500).
