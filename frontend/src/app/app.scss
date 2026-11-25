@@ -1,0 +1,17 @@
+.toolbar {
+  gap: 8px;
+  background: #fff;
+  border-bottom: 1px solid #e0e4ea;
+}
+
+.title {
+  font-weight: 500;
+}
+
+.nav {
+  margin-left: 24px;
+}
+
+.active {
+  background: rgba(0, 90, 200, 0.08);
+}

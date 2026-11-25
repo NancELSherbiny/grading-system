@@ -1,0 +1,54 @@
+<h2 mat-dialog-title>{{ student.name }} — Grades</h2>
+
+<mat-dialog-content>
+  <p class="muted">National ID {{ student.nationalId }} · {{ student.academicYear }}</p>
+
+  @if (report(); as report) {
+    <table mat-table [dataSource]="report.subjects">
+      <ng-container matColumnDef="subject">
+        <th mat-header-cell *matHeaderCellDef>Subject</th>
+        <td mat-cell *matCellDef="let row">{{ row.subject }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="term1">
+        <th mat-header-cell *matHeaderCellDef>Term 1 (30)</th>
+        <td mat-cell *matCellDef="let row">{{ row.term1 ?? '—' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="term2">
+        <th mat-header-cell *matHeaderCellDef>Term 2 (30)</th>
+        <td mat-cell *matCellDef="let row">{{ row.term2 ?? '—' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="total">
+        <th mat-header-cell *matHeaderCellDef>Total (60)</th>
+        <td mat-cell *matCellDef="let row">{{ row.total ?? '—' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="grade">
+        <th mat-header-cell *matHeaderCellDef>Grade</th>
+        <td mat-cell *matCellDef="let row"><app-grade-badge [grade]="row.grade" /></td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+    </table>
+
+    <div class="overall">
+      <app-grade-badge [grade]="report.grade" />
+      @if (report.total !== null) {
+        <span>Overall: <strong>{{ report.total }} / {{ report.maxTotal }}</strong> ({{ report.percentage }}%)</span>
+      } @else {
+        <span class="muted">The overall grade appears once every subject has marks.</span>
+      }
+    </div>
+  } @else if (report() === null) {
+    <p>The grades could not be loaded.</p>
+  } @else {
+    <p class="muted">Loading…</p>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Close</button>
+</mat-dialog-actions>

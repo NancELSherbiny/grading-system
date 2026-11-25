@@ -1,1 +1,90 @@
-/* You can add global styles to this file, and also import other style files */
+@use '@angular/material' as mat;
+
+// Angular Material theme (Material 3): blue colours, Roboto font.
+html {
+  color-scheme: light;
+  @include mat.theme((
+    color: mat.$azure-palette,
+    typography: Roboto,
+    density: 0,
+  ));
+}
+
+body {
+  margin: 0;
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
+  background: #f5f7fa;
+}
+
+// ---------- Layout used by every page ----------
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+
+  h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 500;
+  }
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e0e4ea;
+  border-radius: 12px;
+}
+
+// Filters wrap onto several lines on small screens.
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px;
+
+  mat-form-field {
+    flex: 1 1 200px;
+  }
+}
+
+// Tables scroll sideways on phones instead of squashing their columns.
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+}
+
+// Higher specificity than Angular Material's own cell styles.
+.mat-mdc-table td.no-data {
+  padding: 32px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.muted {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+// Dialog forms: one field per line, full width.
+.fields {
+  display: flex;
+  flex-direction: column;
+  padding-top: 8px !important;
+
+  mat-form-field {
+    width: 100%;
+  }
+}

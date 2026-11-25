@@ -1,0 +1,115 @@
+<div class="page-header">
+  <h1>Students</h1>
+  <button mat-flat-button (click)="openAddDialog()">
+    <mat-icon>person_add</mat-icon>
+    Add student
+  </button>
+</div>
+
+<div class="card">
+  <!-- Search and filters -->
+  <div class="filters">
+    <mat-form-field appearance="outline" class="search" subscriptSizing="dynamic">
+      <mat-label>Search</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput [formControl]="searchControl" placeholder="Name, National ID or academic year" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Academic year</mat-label>
+      <mat-select [value]="query().academicYearId" (selectionChange)="onAcademicYearChange($event.value)">
+        <mat-option [value]="null">All years</mat-option>
+        @for (year of lookups()?.academicYears; track year.id) {
+          <mat-option [value]="year.id">{{ year.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Grade</mat-label>
+      <mat-select [value]="query().grade" (selectionChange)="onGradeChange($event.value)">
+        <mat-option [value]="null">All grades</mat-option>
+        @for (grade of grades; track grade) {
+          <mat-option [value]="grade">{{ grade }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <!-- Keeps its height while hidden, so the table doesn't jump. -->
+  <mat-progress-bar mode="indeterminate" [class.hidden]="!loading()" />
+
+  <!-- Table: sorting and paging happen on the server -->
+  <div class="table-container">
+    <table mat-table [dataSource]="students()" matSort matSortActive="id" matSortDirection="asc" (matSortChange)="onSortChange($event)">
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
+        <td mat-cell *matCellDef="let student">{{ student.id }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
+        <td mat-cell *matCellDef="let student">{{ student.name }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="nationalId">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>National ID</th>
+        <td mat-cell *matCellDef="let student">{{ student.nationalId }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="academicYear">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Academic year</th>
+        <td mat-cell *matCellDef="let student">{{ student.academicYear }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="total">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Total</th>
+        <td mat-cell *matCellDef="let student">
+          @if (student.total !== null) {
+            {{ student.total }} / {{ student.maxTotal }}
+            <span class="muted">({{ student.percentage }}%)</span>
+          } @else {
+            <span class="muted">—</span>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="grade">
+        <th mat-header-cell *matHeaderCellDef>Grade</th>
+        <td mat-cell *matCellDef="let student"><app-grade-badge [grade]="student.grade" /></td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let student" class="actions">
+          <button mat-icon-button matTooltip="View grades" [attr.aria-label]="'View grades of ' + student.name" (click)="openGradesDialog(student)">
+            <mat-icon>assessment</mat-icon>
+          </button>
+          <button mat-icon-button matTooltip="Edit" [attr.aria-label]="'Edit ' + student.name" (click)="openEditDialog(student)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button matTooltip="Delete" [attr.aria-label]="'Delete ' + student.name" (click)="confirmDelete(student)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+      <tr class="mat-mdc-row" *matNoDataRow>
+        <td class="no-data" [attr.colspan]="columns.length">
+          {{ loading() ? 'Loading…' : 'No students found.' }}
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <mat-paginator
+    [length]="totalCount()"
+    [pageIndex]="query().pageNumber - 1"
+    [pageSize]="query().pageSize"
+    [pageSizeOptions]="[5, 10, 25, 50]"
+    showFirstLastButtons
+    (page)="onPageChange($event)"
+  />
+</div>

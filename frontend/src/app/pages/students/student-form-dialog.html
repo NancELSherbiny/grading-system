@@ -1,0 +1,49 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Edit student' : 'Add student' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="save()">
+  <mat-dialog-content class="fields">
+    <mat-form-field appearance="outline">
+      <mat-label>Name</mat-label>
+      <input matInput formControlName="name" maxlength="100" />
+      @if (form.controls.name.hasError('required')) {
+        <mat-error>Name is required.</mat-error>
+      } @else if (form.controls.name.hasError('server')) {
+        <mat-error>{{ form.controls.name.getError('server') }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>National ID</mat-label>
+      <input matInput formControlName="nationalId" maxlength="14" inputmode="numeric" />
+      <mat-hint align="end">{{ form.controls.nationalId.value.length }} / 14</mat-hint>
+      @if (form.controls.nationalId.hasError('required')) {
+        <mat-error>National ID is required.</mat-error>
+      } @else if (form.controls.nationalId.hasError('pattern')) {
+        <mat-error>National ID must contain exactly 14 digits.</mat-error>
+      } @else if (form.controls.nationalId.hasError('server')) {
+        <mat-error>{{ form.controls.nationalId.getError('server') }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Academic year</mat-label>
+      <mat-select formControlName="academicYearId">
+        @for (year of lookups()?.academicYears; track year.id) {
+          <mat-option [value]="year.id">{{ year.name }}</mat-option>
+        }
+      </mat-select>
+      @if (form.controls.academicYearId.hasError('required')) {
+        <mat-error>Choose an academic year.</mat-error>
+      } @else if (form.controls.academicYearId.hasError('server')) {
+        <mat-error>{{ form.controls.academicYearId.getError('server') }}</mat-error>
+      }
+    </mat-form-field>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>Cancel</button>
+    <button mat-flat-button type="submit" [disabled]="saving()">
+      {{ saving() ? 'Saving…' : 'Save' }}
+    </button>
+  </mat-dialog-actions>
+</form>
