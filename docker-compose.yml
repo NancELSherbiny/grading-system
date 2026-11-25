@@ -1,5 +1,5 @@
 # SQL Server for macOS / Linux, where LocalDB isn't available.
-#   docker compose up -d db
+#   docker compose up -d --wait db     (returns once SQL Server accepts connections)
 services:
   db:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -12,6 +12,13 @@ services:
       - "1433:1433"
     volumes:
       - sqlserver-data:/var/opt/mssql
+    # "Healthy" once a login and a query succeed.
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -b -Q 'SELECT 1' -o /dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
 
 volumes:
   sqlserver-data:
