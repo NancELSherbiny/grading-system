@@ -10,7 +10,7 @@ A student grading system: manage students, enter Term 1 and Term 2 marks per sub
 
 ## Run it
 
-The API creates the database, applies the migration and adds 12 demo students on first start. There's no SQL script to run.
+The API creates the database, applies the migration and adds 30 demo students on first start. There's no SQL script to run.
 
 ### Option 1: Docker (one command)
 
